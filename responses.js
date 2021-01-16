@@ -25,12 +25,11 @@ const eventMessage = (title, date, attendees, unavail) => {
             {
                 name: "Unavailable",
                 value: unavail_list,
+            }
+            ],
+            footer: {
+                text: `${config.YES_EMOJI}: available ${config.NO_EMOJI}: unavailable ${ config.EXIT_EMOJI }: delete`,
             },
-            {
-                name: "Help",
-                value: `${config.YES_EMOJI} to join\n${config.NO_EMOJI} if you can't make it\n${config.EXIT_EMOJI} to delete`,
-            }],
-            timestamp: new Date(),
         }
     }
 }
