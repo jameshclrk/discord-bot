@@ -1,0 +1,6 @@
+export default {
+	"BOT_TOKEN": "",
+	"PREFIX": "!",
+	"YES_EMOJI": "✅",
+	"EXIT_EMOJI": "❌"
+};
