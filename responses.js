@@ -1,3 +1,4 @@
+import dateFormat from "dateformat";
 import config from "./config.js";
 
 const eventMessage = (title, date, attendees, unavail) => {
@@ -15,7 +16,7 @@ const eventMessage = (title, date, attendees, unavail) => {
             title: title,
             fields: [{
                 name: "Time of Event",
-                value: date,
+                value: `${dateFormat(date, "ddd mmm dd yyyy HH:MM:ss Z")} ([Convert](https://timee.io/${dateFormat(date, "yyyymmdd'T'HHMM")}?tl=${title}))`,
             },
             {
                 name: "Attendees",
