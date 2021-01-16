@@ -47,7 +47,7 @@ class EventManager {
                         const attending = users.filter(user => !user.bot).array().join(", ");
                         return channel.send(notificationMessage(event.args, null, attending))
                     })
-                    .then(() => this.deleteEvent(event.owner_id, messageId))
+                    .then(() => this.deleteEvent(event.owner_id, false, messageId))
                     .catch(console.error);
             })
             .catch(console.error);
