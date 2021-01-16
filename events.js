@@ -134,7 +134,10 @@ class EventManager {
     handleReaction = (messageReaction, user, action) => {
         if (messageReaction._emoji.name === config.YES_EMOJI || messageReaction._emoji.name === config.NO_EMOJI) {
             console.log(`${user.username} updated their RSVP for event ${messageReaction.message.id}`)
-            this.updateAttendees(messageReaction);
+            this.toggleAttendence(messageReaction, user, action)
+            .then(this.updateAttendees(messageReaction))
+            .catch(console.error);
+            
         } else if ((action === "add") && (messageReaction._emoji.name === config.EXIT_EMOJI)) {
             const guild = messageReaction.message.guild;
             let admin = false;
@@ -147,6 +150,27 @@ class EventManager {
                 })
                 .catch(console.error)
         }
+    }
+
+    toggleAttendence = (messageReaction, user, action) => {
+        // Don't do anything if we're removing a reaction
+        if (action === "remove") {
+            return Promise.resolve()
+        }
+        
+        // Figure out the "opposite" emoji to remove
+        let toggleEmoji = ""
+        if (messageReaction._emoji.name === config.YES_EMOJI) {
+            toggleEmoji = config.NO_EMOJI
+        } else if (messageReaction._emoji.name === config.NO_EMOJI) {
+            toggleEmoji = config.YES_EMOJI
+        } else {
+            // wtf happened
+            return Promise.reject(`Tried to toggle attendence for ${user} with reaction ${messageReaction} ${action}`)
+        }
+
+        // Try remove the opposite emoji for the user
+        return messageReaction.message.reactions.resolve(toggleEmoji).users.remove(user)
     }
 
     // Update the attendee list when a message has a new reaction

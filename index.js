@@ -40,6 +40,7 @@ client.on("message", function (message) {
 client.on("messageReactionAdd", async (messageReaction, user) => {
     if (messageReaction.message.partial) await messageReaction.message.fetch();
     if (user.bot) return;
+    if (messageReaction.me) return;
     if (eventManager.isEvent(messageReaction.message.id)) {
         eventManager.handleReaction(messageReaction, user, "add")
     }
@@ -48,6 +49,7 @@ client.on("messageReactionAdd", async (messageReaction, user) => {
 client.on("messageReactionRemove", async (messageReaction, user) => {
     if (messageReaction.message.partial) await messageReaction.message.fetch();
     if (user.bot) return;
+    if (messageReaction.me) return;
     if (eventManager.isEvent(messageReaction.message.id)) {
         eventManager.handleReaction(messageReaction, user, "remove")
     }
