@@ -97,9 +97,10 @@ class EventManager {
             return
         }
 
-        message.reply(eventMessage(text, date, ""))
+        message.reply(eventMessage(text, date, "", ""))
             .then((newMessage) => {
                 newMessage.react(config.YES_EMOJI);
+                newMessage.react(config.NO_EMOJI);
                 newMessage.react(config.EXIT_EMOJI);
                 console.log(`${message.author.username} created event ${message.id}`);
                 return this.storeEvent(newMessage.id, message.author.id, newMessage.channel.id, text, date);
@@ -131,8 +132,8 @@ class EventManager {
 
     // Handle event reactions
     handleReaction = (messageReaction, user, action) => {
-        if (messageReaction._emoji.name === config.YES_EMOJI) {
-            console.log(`${user.username} joined event ${messageReaction.message.id}`)
+        if (messageReaction._emoji.name === config.YES_EMOJI || messageReaction._emoji.name === config.NO_EMOJI) {
+            console.log(`${user.username} updated their RSVP for event ${messageReaction.message.id}`)
             this.updateAttendees(messageReaction);
         } else if ((action === "add") && (messageReaction._emoji.name === config.EXIT_EMOJI)) {
             const guild = messageReaction.message.guild;
@@ -151,10 +152,14 @@ class EventManager {
     // Update the attendee list when a message has a new reaction
     updateAttendees = (messageReaction) => {
         messageReaction.message.reactions.cache.get(config.YES_EMOJI).users.fetch()
-            .then(users => {
-                const attending = users.filter(user => !user.bot).array().join(", ");
-                const e = this.events[messageReaction.message.id];
-                return messageReaction.message.edit(eventMessage(e.args, e.date, attending));
+            .then(attendees => {
+                return messageReaction.message.reactions.cache.get(config.NO_EMOJI).users.fetch()
+                .then(unavail_users => {
+                    const attending = attendees.filter(user => !user.bot).array().join(", ")
+                    const unavail = unavail_users.filter(user => !user.bot).array().join(", ");
+                    const e = this.events[messageReaction.message.id];
+                    return messageReaction.message.edit(eventMessage(e.args, e.date, attending, unavail));
+                })
             })
             .catch(console.error);
     }

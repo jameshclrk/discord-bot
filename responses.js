@@ -1,7 +1,13 @@
-const eventMessage = (title, date, attendees) => {
+import config from "./config.js";
+
+const eventMessage = (title, date, attendees, unavail) => {
     let attendee_list = attendees
+    let unavail_list = unavail
     if (attendees === "") {
         attendee_list = "none"
+    }
+    if (unavail === "") {
+        unavail_list = "none"
     }
     return {
         embed: {
@@ -15,7 +21,14 @@ const eventMessage = (title, date, attendees) => {
                 name: "Attendees",
                 value: attendee_list,
             },
-            ],
+            {
+                name: "Unavailable",
+                value: unavail_list,
+            },
+            {
+                name: "Help",
+                value: `${config.YES_EMOJI} to join\n${config.NO_EMOJI} if you can't make it\n${config.EXIT_EMOJI} to delete`,
+            }],
             timestamp: new Date(),
         }
     }
