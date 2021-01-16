@@ -16,9 +16,15 @@ const modelOptions = {
 };
 
 class EventManager {
-    constructor(sequelize, client) {
+    constructor(client) {
         this.events = {};
-        this.sequelize = sequelize;
+        this.sequelize = new Sequelize('database', 'user', 'password', {
+            host: 'localhost',
+            dialect: 'sqlite',
+            logging: false,
+            // SQLite only
+            storage: 'events.sqlite',
+        });
         this.discordClient = client;
         this.model = this.sequelize.define('events', modelOptions);
     }
@@ -157,7 +163,7 @@ class EventManager {
         if (action === "remove") {
             return Promise.resolve()
         }
-        
+
         // Figure out the "opposite" emoji to remove
         let toggleEmoji = ""
         if (messageReaction._emoji.name === config.YES_EMOJI) {

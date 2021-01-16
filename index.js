@@ -1,18 +1,10 @@
 import Discord from "discord.js";
-import Sequelize from 'sequelize';
 
 import config from "./config.js";
 import { EventManager } from "./events.js";
 
 const client = new Discord.Client({ partials: ['MESSAGE', 'CHANNEL', 'REACTION'] });
-const sequelize = new Sequelize('database', 'user', 'password', {
-    host: 'localhost',
-    dialect: 'sqlite',
-    logging: false,
-    // SQLite only
-    storage: 'database.sqlite',
-});
-const eventManager = new EventManager(sequelize, client);
+const eventManager = new EventManager(client);
 
 client.login(config.BOT_TOKEN);
 
