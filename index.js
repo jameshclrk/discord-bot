@@ -46,5 +46,3 @@ client.on("messageReactionRemove", async (messageReaction, user) => {
         eventManager.handleReaction(messageReaction, user, "remove")
     }
 });
-
-

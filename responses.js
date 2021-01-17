@@ -16,7 +16,7 @@ const eventMessage = (title, date, attendees, unavail) => {
             title: title,
             fields: [{
                 name: "Time of Event",
-                value: `${dateFormat(date, "ddd mmm dd yyyy HH:MM:ss Z")} ([Convert](https://timee.io/${dateFormat(date, "yyyymmdd'T'HHMM")}?tl=${title}))`,
+                value: `${dateFormat(date, "ddd mmm dd yyyy HH:MM:ss Z")} ([Convert](https://timee.io/${dateFormat(date, "yyyymmdd'T'HHMM")}?tl=${encodeURIComponent(title)}))`,
             },
             {
                 name: "Attendees",
@@ -28,7 +28,7 @@ const eventMessage = (title, date, attendees, unavail) => {
             }
             ],
             footer: {
-                text: `${config.YES_EMOJI}: available ${config.NO_EMOJI}: unavailable ${ config.EXIT_EMOJI }: delete`,
+                text: `${config.YES_EMOJI}: available ${config.NO_EMOJI}: unavailable ${config.EXIT_EMOJI}: delete`,
             },
         }
     }
