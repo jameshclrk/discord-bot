@@ -117,7 +117,7 @@ class EventManager {
 
     // Remove an event from runtime and database
     deleteEvent = async (userId, admin, messageId) => {
-        if (admin || userId === this.events[messageId].owner_id) {
+        if ((config.ADMIN_DELETE && admin) || userId === this.events[messageId].owner_id) {
             const job = this.events[messageId].job
             if (job) {
                 job.cancel()
