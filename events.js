@@ -45,22 +45,26 @@ class EventManager {
     // Send a notification message for an event
     notify = (messageId) => {
         const event = this.events[messageId];
+        // We need to fetch the channel and message to be able to get the reactions
+        // and send a message in the channel
         this.discordClient.channels.fetch(event.channel_id)
             .then(channel => {
                 channel.messages.fetch(messageId, true, true)
                     .then(message => message.reactions.cache.get(config.YES_EMOJI).users.fetch())
                     .then(users => {
-                        console.log(`event ${messageId} happened! deleting`)
                         const attending = users.filter(user => !user.bot).array().join(", ");
                         return channel.send(notificationMessage(event.text, null, attending))
                     })
-                    .then(() => this.deleteEvent(event.owner_id, false, messageId))
+                    .then(() => {
+                        console.log(`event ${messageId} happened! deleting`)
+                        return this.deleteEvent(event.owner_id, false, messageId)
+                    })
                     .catch(console.error);
             })
             .catch(console.error);
     }
 
-    // Add event to the job scheduler
+    // Add event to the manager and schedule the job
     addEvent = dbEvent => {
         const job = schedule.scheduleJob(dbEvent.date, () => { this.notify(dbEvent.message_id) })
         this.events[dbEvent.message_id] = {
@@ -108,7 +112,8 @@ class EventManager {
             return
         }
 
-        message.reply(eventMessage(cleanText, date, "", ""))
+        // We "fake" an event object (it doesn't exist yet) with what's needed in the message...
+        message.reply(eventMessage({ clean_text: cleanText, date: date }, "", ""))
             .then((newMessage) => {
                 newMessage.react(config.YES_EMOJI);
                 newMessage.react(config.NO_EMOJI);
@@ -116,22 +121,30 @@ class EventManager {
                 console.log(`${message.author.username} created event ${message.id}`);
                 return this.storeEvent(newMessage.id, message.author.id, newMessage.channel.id, text, cleanText, date);
             })
-            .then(e => this.addEvent(e))
+            .then(e => {
+                this.addEvent(e)
+            })
             .catch(console.error);
     }
 
-    // Remove an event from runtime and database
+    // Remove an event from manager and database
     deleteEvent = async (userId, admin, messageId) => {
+        // Delete only if requester is the owner of the event
+        // OR admin is enabled in the config
         if ((config.ADMIN_DELETE && admin) || userId === this.events[messageId].owner_id) {
+            // The scheduled job needs to be cancelled, otherwise the notification will still fire
             const job = this.events[messageId].job
             if (job) {
                 job.cancel()
             }
+            // Fetch and delete the event message
             this.discordClient.channels.fetch(this.events[messageId].channel_id)
                 .then(channel => channel.messages.fetch(messageId))
                 .then(message => message.delete())
                 .catch(console.error)
+            // Remove the event from the manager
             delete this.events[messageId]
+            // Finally, remove the event from the DB
             await this.model.destroy({ where: { message_id: messageId } });
         }
     }
@@ -143,12 +156,14 @@ class EventManager {
 
     // Handle event reactions
     handleReaction = (messageReaction, user, action) => {
+        // Either handle the YES or NO for attendence
         if (messageReaction._emoji.name === config.YES_EMOJI || messageReaction._emoji.name === config.NO_EMOJI) {
             console.log(`${user.username} updated their RSVP for event ${messageReaction.message.id}`)
             this.toggleAttendence(messageReaction, user, action)
-            .then(this.updateAttendees(messageReaction))
-            .catch(console.error);
-            
+                .then(this.updateAttendees(messageReaction))
+                .catch(console.error);
+
+            // OR handle the delete reaction
         } else if ((action === "add") && (messageReaction._emoji.name === config.EXIT_EMOJI)) {
             const guild = messageReaction.message.guild;
             let admin = false;
@@ -180,7 +195,7 @@ class EventManager {
             return Promise.reject(`Tried to toggle attendence for ${user} with reaction ${messageReaction} ${action}`)
         }
 
-        // Try remove the opposite emoji for the user
+        // As we are only worried about toggling a reaction when ADDING a reaction, we know we should REMOVE the opposite
         return messageReaction.message.reactions.resolve(toggleEmoji).users.remove(user)
     }
 
@@ -189,12 +204,12 @@ class EventManager {
         messageReaction.message.reactions.cache.get(config.YES_EMOJI).users.fetch()
             .then(attendees => {
                 return messageReaction.message.reactions.cache.get(config.NO_EMOJI).users.fetch()
-                .then(unavail_users => {
-                    const attending = attendees.filter(user => !user.bot).array().join(", ")
-                    const unavail = unavail_users.filter(user => !user.bot).array().join(", ");
-                    const e = this.events[messageReaction.message.id];
-                    return messageReaction.message.edit(eventMessage(e.cleanText, e.date, attending, unavail));
-                })
+                    .then(unavail_users => {
+                        const attending = attendees.filter(user => !user.bot).array().join(", ")
+                        const unavail = unavail_users.filter(user => !user.bot).array().join(", ");
+                        const e = this.events[messageReaction.message.id];
+                        return messageReaction.message.edit(eventMessage(e, attending, unavail));
+                    })
             })
             .catch(console.error);
     }

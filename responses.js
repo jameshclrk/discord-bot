@@ -1,7 +1,7 @@
 import dateFormat from "dateformat";
 import config from "./config.js";
 
-const eventMessage = (title, date, attendees, unavail) => {
+const eventMessage = (event, attendees, unavail) => {
     let attendee_list = attendees
     let unavail_list = unavail
     if (attendees === "") {
@@ -13,10 +13,10 @@ const eventMessage = (title, date, attendees, unavail) => {
     return {
         embed: {
             color: 3447003,
-            title: title,
+            title: event.clean_text,
             fields: [{
                 name: "Time of Event",
-                value: `${dateFormat(date, "ddd mmm dd yyyy HH:MM:ss Z")} ([Convert](https://timee.io/${dateFormat(date, "yyyymmdd'T'HHMM")}?tl=${encodeURIComponent(title)}))`,
+                value: `${dateFormat(event.date, "ddd mmm dd yyyy HH:MM:ss Z")} ([Convert](https://timee.io/${dateFormat(event.date, "yyyymmdd'T'HHMM")}?tl=${encodeURIComponent(event.clean_text)}))`,
             },
             {
                 name: "Attendees",
