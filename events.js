@@ -11,7 +11,8 @@ const modelOptions = {
     },
     owner_id: Sequelize.STRING,
     channel_id: Sequelize.STRING,
-    args: Sequelize.TEXT,
+    text: Sequelize.TEXT,
+    clean_text: Sequelize.TEXT,
     date: Sequelize.DATE,
 };
 
@@ -51,7 +52,7 @@ class EventManager {
                     .then(users => {
                         console.log(`event ${messageId} happened! deleting`)
                         const attending = users.filter(user => !user.bot).array().join(", ");
-                        return channel.send(notificationMessage(event.args, null, attending))
+                        return channel.send(notificationMessage(event.text, null, attending))
                     })
                     .then(() => this.deleteEvent(event.owner_id, false, messageId))
                     .catch(console.error);
@@ -66,18 +67,20 @@ class EventManager {
             "job": job,
             "owner_id": dbEvent.owner_id,
             "channel_id": dbEvent.channel_id,
-            "args": dbEvent.args,
+            "text": dbEvent.text,
+            "clean_text": dbEvent.clean_text,
             "date": dbEvent.date,
         }
     }
 
     // Store event in the database
-    storeEvent = async (messageId, authorId, channelId, arg, date) => {
+    storeEvent = async (messageId, authorId, channelId, text, cleanText, date) => {
         return await this.model.create({
             "message_id": messageId,
             "owner_id": authorId,
             "channel_id": channelId,
-            "args": arg,
+            "text": text,
+            "clean_text": cleanText,
             "date": date,
         });
     }
@@ -86,6 +89,7 @@ class EventManager {
     newEvent = (message, args) => {
         // For an event, we want to take the other arguments as a sentence
         const arg = args.join(" ")
+        const cleanMessage = message.cleanContent.replace(`${config.PREFIX}event `, "")
         const currentTime = Date.now()
         const results = chrono.parse(arg, currentTime, { forwardDate: true });
 
@@ -95,7 +99,8 @@ class EventManager {
             return
         }
 
-        const text = arg.replace(results[0].text, '');
+        const text = arg.replace(results[0].text, "");
+        const cleanText = cleanMessage.replace(results[0].text, "")
         const date = results[0].date()
 
         if (date <= currentTime) {
@@ -109,7 +114,7 @@ class EventManager {
                 newMessage.react(config.NO_EMOJI);
                 newMessage.react(config.EXIT_EMOJI);
                 console.log(`${message.author.username} created event ${message.id}`);
-                return this.storeEvent(newMessage.id, message.author.id, newMessage.channel.id, text, date);
+                return this.storeEvent(newMessage.id, message.author.id, newMessage.channel.id, text, cleanText, date);
             })
             .then(e => this.addEvent(e))
             .catch(console.error);
@@ -188,7 +193,7 @@ class EventManager {
                     const attending = attendees.filter(user => !user.bot).array().join(", ")
                     const unavail = unavail_users.filter(user => !user.bot).array().join(", ");
                     const e = this.events[messageReaction.message.id];
-                    return messageReaction.message.edit(eventMessage(e.args, e.date, attending, unavail));
+                    return messageReaction.message.edit(eventMessage(e.cleanText, e.date, attending, unavail));
                 })
             })
             .catch(console.error);
