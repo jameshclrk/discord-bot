@@ -108,7 +108,7 @@ class EventManager {
             return
         }
 
-        message.reply(eventMessage(text, date, "", ""))
+        message.reply(eventMessage(cleanText, date, "", ""))
             .then((newMessage) => {
                 newMessage.react(config.YES_EMOJI);
                 newMessage.react(config.NO_EMOJI);
