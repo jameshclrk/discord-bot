@@ -11,10 +11,13 @@ const modelOptions = {
     },
     owner_id: Sequelize.STRING,
     channel_id: Sequelize.STRING,
+    guild_id: Sequelize.STRING,
     text: Sequelize.TEXT,
     clean_text: Sequelize.TEXT,
     date: Sequelize.DATE,
 };
+
+class Event extends Sequelize.Model { }
 
 class EventManager {
     constructor(client) {
@@ -27,17 +30,17 @@ class EventManager {
             storage: 'events.sqlite',
         });
         this.discordClient = client;
-        this.model = this.sequelize.define('events', modelOptions);
+        Event.init(modelOptions, { sequelize: this.sequelize, modelName: 'event' });
     }
 
     // Initialise the database model and add add existing events to runtime
     init = () => {
-        this.model.sync();
-        this.model.findAll()
+        this.sequelize.sync();
+        Event.findAll()
             .then(allEvents => {
                 allEvents.forEach(e => {
                     this.addEvent(e)
-                    console.log(`loaded event ${e.message_id} from database`)
+                    console.log(`loaded event ${e.id}/${e.message_id}/${e.guild_id} from database`)
                 })
             });
     }
@@ -67,22 +70,17 @@ class EventManager {
     // Add event to the manager and schedule the job
     addEvent = dbEvent => {
         const job = schedule.scheduleJob(dbEvent.date, () => { this.notify(dbEvent.message_id) })
-        this.events[dbEvent.message_id] = {
-            "job": job,
-            "owner_id": dbEvent.owner_id,
-            "channel_id": dbEvent.channel_id,
-            "text": dbEvent.text,
-            "clean_text": dbEvent.clean_text,
-            "date": dbEvent.date,
+        dbEvent.job = job
+        this.events[dbEvent.message_id] = dbEvent
         }
-    }
 
     // Store event in the database
-    storeEvent = async (messageId, authorId, channelId, text, cleanText, date) => {
-        return await this.model.create({
+    storeEvent = async (messageId, authorId, channelId, guildId, text, cleanText, date) => {
+        return await Event.create({
             "message_id": messageId,
             "owner_id": authorId,
             "channel_id": channelId,
+            "guild_id": guildId,
             "text": text,
             "clean_text": cleanText,
             "date": date,
@@ -118,11 +116,16 @@ class EventManager {
                 newMessage.react(config.YES_EMOJI);
                 newMessage.react(config.NO_EMOJI);
                 newMessage.react(config.EXIT_EMOJI);
+                let guildId = "";
+                if (message.channel.guild) {
+                    guildId = message.channel.guild.id
+                }
                 console.log(`${message.author.username} created event ${message.id}`);
-                return this.storeEvent(newMessage.id, message.author.id, newMessage.channel.id, text, cleanText, date);
-            })
+                this.storeEvent(newMessage.id, message.author.id, newMessage.channel.id, guildId, text, cleanText, date)
             .then(e => {
                 this.addEvent(e)
+                        newMessage.edit(eventMessage(e, "", ""))
+            })
             })
             .catch(console.error);
     }
@@ -145,7 +148,7 @@ class EventManager {
             // Remove the event from the manager
             delete this.events[messageId]
             // Finally, remove the event from the DB
-            await this.model.destroy({ where: { message_id: messageId } });
+            await Event.destroy({ where: { message_id: messageId } });
         }
     }
 
