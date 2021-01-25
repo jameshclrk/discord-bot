@@ -295,9 +295,15 @@ class EventManager {
 
     getLink = async (message, args) => {
         const id = args.join().match("[0-9]+")
+        if (!message.channel.guild) {
+            message.reply(`Couldn't find an event with id #${id}`)
+        }
         try {
             const e = await Event.findByPk(parseInt(id))
             if (e) {
+                if (e.guild_id != message.channel.guild.id) {
+                    message.reply(`Couldn't find an event with id #${id}`)
+                }
                 message.reply(`${e.clean_text}: https://discordapp.com/channels/${e.guild_id}/${e.channel_id}/${e.message_id}`)
             } else {
                 message.reply(`Couldn't find an event with id #${id}`)
