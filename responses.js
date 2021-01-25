@@ -2,6 +2,10 @@ import dateFormat from "dateformat";
 import { table, getBorderCharacters } from "table";
 import config from "./config.js";
 
+const eventDate = (event) => {
+    return `${dateFormat(event.date, "ddd mmm dd yyyy HH:MM:ss Z")} ([Convert](https://timee.io/${dateFormat(event.date, "yyyymmdd'T'HHMM")}?tl=${encodeURIComponent(event.clean_text)}))`
+}
+
 const eventDateShort = (event) => {
     return `${dateFormat(event.date, "dd/mm/yyyy HH:MM Z")}`
 }
@@ -9,19 +13,23 @@ const eventDateShort = (event) => {
 const eventMessage = (event, attendees, unavail) => {
     let attendee_list = attendees
     let unavail_list = unavail
+    let id_text = ""
     if (attendees === "") {
         attendee_list = "none"
     }
     if (unavail === "") {
         unavail_list = "none"
     }
+    if (event.id) {
+        id_text = `#${event.id} `
+    }
     return {
         embed: {
             color: 3447003,
-            title: event.clean_text,
+            title: `${id_text}${event.clean_text}`,
             fields: [{
                 name: "Time of Event",
-                value: `${dateFormat(event.date, "ddd mmm dd yyyy HH:MM:ss Z")} ([Convert](https://timee.io/${dateFormat(event.date, "yyyymmdd'T'HHMM")}?tl=${encodeURIComponent(event.clean_text)}))`,
+                value: eventDate(event),
             },
             {
                 name: "Attendees",
