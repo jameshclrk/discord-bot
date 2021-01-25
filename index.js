@@ -24,6 +24,10 @@ client.on("message", function (message) {
     const args = commandBody.split(' ');
     const command = args.shift().toLowerCase();
 
+    if (command === "list") {
+        eventManager.listEvents(message)
+    }
+
     if (command === "event") {
         eventManager.newEvent(message, args)
     }

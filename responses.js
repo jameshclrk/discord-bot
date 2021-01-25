@@ -1,5 +1,10 @@
 import dateFormat from "dateformat";
+import { table, getBorderCharacters } from "table";
 import config from "./config.js";
+
+const eventDateShort = (event) => {
+    return `${dateFormat(event.date, "dd/mm/yyyy HH:MM Z")}`
+}
 
 const eventMessage = (event, attendees, unavail) => {
     let attendee_list = attendees
@@ -34,8 +39,31 @@ const eventMessage = (event, attendees, unavail) => {
     }
 }
 
+const listEventsMessage = (events) => {
+    let mEvents = events.map(e => ([e.clean_text, `#${e.id}`, eventDateShort(e)]))
+    let output;
+
+    output = table(mEvents, {
+        border: getBorderCharacters(`void`),
+        columnDefault: {
+            paddingLeft: 0,
+            paddingRight: 1
+        },
+        drawHorizontalLine: () => {
+            return false
+        }
+    });
+    return {
+        embed: {
+            color: 3447003,
+            title: "Scheduled Events",
+            description: `\`\`\`${output}\`\`\``,
+        }
+    }
+}
+
 const notificationMessage = (title, date, attendees) => {
     return `${attendees}: ${title}`
 }
 
-export { eventMessage, notificationMessage };
+export { eventMessage, listEventsMessage, notificationMessage };

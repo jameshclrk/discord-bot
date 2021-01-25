@@ -1,6 +1,6 @@
 import chrono from 'chrono-node';
 import schedule from 'node-schedule';
-import { eventMessage, notificationMessage } from "./responses.js";
+import { eventMessage, listEventsMessage, notificationMessage } from "./responses.js";
 import Sequelize from 'sequelize';
 import config from "./config.js";
 
@@ -213,6 +213,30 @@ class EventManager {
                         const e = this.events[messageReaction.message.id];
                         return messageReaction.message.edit(eventMessage(e, attending, unavail));
                     })
+            })
+            .catch(console.error);
+    }
+
+    listEvents = (message) => {
+        if (message.channel.guild) {
+            this.listGuildEvents(message)
+        } else {
+            this.listChannelEvents(message)
+        }
+    }
+
+    listGuildEvents = (message) => {
+        Event.findAll({ where: { guild_id: message.channel.guild.id } })
+            .then(events => {
+                return message.reply(listEventsMessage(events))
+            })
+            .catch(console.error);
+    }
+
+    listChannelEvents = (message) => {
+        Event.findAll({ where: { guild_id: message.channel.id } })
+            .then(events => {
+                return message.reply(listEventsMessage(events))
             })
             .catch(console.error);
     }
