@@ -303,8 +303,9 @@ class EventManager {
             if (e) {
                 if (e.guild_id != message.channel.guild.id) {
                     message.reply(`Couldn't find an event with id #${id}`)
+                } else {
+                    message.reply(`${e.clean_text}: https://discordapp.com/channels/${e.guild_id}/${e.channel_id}/${e.message_id}`)
                 }
-                message.reply(`${e.clean_text}: https://discordapp.com/channels/${e.guild_id}/${e.channel_id}/${e.message_id}`)
             } else {
                 message.reply(`Couldn't find an event with id #${id}`)
             }
