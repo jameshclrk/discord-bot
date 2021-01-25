@@ -14,10 +14,17 @@ client.once('ready', () => {
 });
 
 client.on("message", function (message) {
+    let moderate = eventManager.isChannelRegistered(message.channel.id)
     // Ignore all messages from bots
     if (message.author.bot) return;
     // Ignore messages that don't begin with the prefix
-    if (!message.content.startsWith(config.PREFIX)) return;
+    if (!message.content.startsWith(config.PREFIX)) {
+        if (moderate) {
+            message.delete()
+        } else {
+            return
+        }
+    }
 
     // Remove the prefix and get the first argument as the command
     const commandBody = message.content.slice(config.PREFIX.length);
@@ -26,6 +33,10 @@ client.on("message", function (message) {
 
     if (command === "list") {
         eventManager.listEvents(message)
+    }
+
+    if (command === "register") {
+        eventManager.registerChannel(args)
     }
 
     if (command === "event") {

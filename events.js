@@ -72,7 +72,7 @@ class EventManager {
         const job = schedule.scheduleJob(dbEvent.date, () => { this.notify(dbEvent.message_id) })
         dbEvent.job = job
         this.events[dbEvent.message_id] = dbEvent
-        }
+    }
 
     // Store event in the database
     storeEvent = async (messageId, authorId, channelId, guildId, text, cleanText, date) => {
@@ -122,10 +122,10 @@ class EventManager {
                 }
                 console.log(`${message.author.username} created event ${message.id}`);
                 this.storeEvent(newMessage.id, message.author.id, newMessage.channel.id, guildId, text, cleanText, date)
-            .then(e => {
-                this.addEvent(e)
+                    .then(e => {
+                        this.addEvent(e)
                         newMessage.edit(eventMessage(e, "", ""))
-            })
+                    })
             })
             .catch(console.error);
     }
@@ -240,6 +240,14 @@ class EventManager {
             })
             .catch(console.error);
     }
+
+    registerChannel = (a) => {
+    }
+
+    isChannelRegistered = (a) => {
+        return false
+    }
+
 }
 
 export { EventManager };
