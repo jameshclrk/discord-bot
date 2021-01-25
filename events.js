@@ -2,9 +2,10 @@ import chrono from 'chrono-node';
 import schedule from 'node-schedule';
 import { eventMessage, listEventsMessage, notificationMessage } from "./responses.js";
 import Sequelize from 'sequelize';
+import { isAdmin } from "./helpers.js";
 import config from "./config.js";
 
-const modelOptions = {
+const eventModelOptions = {
     message_id: {
         type: Sequelize.STRING,
         unique: true,
@@ -17,7 +18,17 @@ const modelOptions = {
     date: Sequelize.DATE,
 };
 
+const regChannelOptions = {
+    channel_id: {
+        type: Sequelize.STRING,
+        unique: true,
+    },
+    guild_id: Sequelize.STRING,
+};
+
 class Event extends Sequelize.Model { }
+
+class RegisteredChannel extends Sequelize.Model { }
 
 class EventManager {
     constructor(client) {
@@ -30,7 +41,8 @@ class EventManager {
             storage: 'events.sqlite',
         });
         this.discordClient = client;
-        Event.init(modelOptions, { sequelize: this.sequelize, modelName: 'event' });
+        Event.init(eventModelOptions, { sequelize: this.sequelize, modelName: 'event' });
+        RegisteredChannel.init(regChannelOptions, { sequelize: this.sequelize, modelName: 'registered_channel' });
     }
 
     // Initialise the database model and add add existing events to runtime
@@ -171,7 +183,7 @@ class EventManager {
             const guild = messageReaction.message.guild;
             let admin = false;
             if (guild) {
-                admin = guild.member(user).hasPermission('ADMINISTRATOR')
+                admin = isAdmin(user, guild)
             }
             this.deleteEvent(user.id, admin, messageReaction.message.id)
                 .then(() => {
@@ -241,11 +253,44 @@ class EventManager {
             .catch(console.error);
     }
 
-    registerChannel = (a) => {
+    registerChannel = (message) => {
+        if (isAdmin(message.author, message.channel.guild)) {
+            const channel = message.mentions.channels.first();
+            if (channel.id && channel.guild.id) {
+                RegisteredChannel.create({
+                    "channel_id": channel.id,
+                    "guild_id": channel.guild.id,
+                })
+                    .then(e => message.reply(`Registered ${channel} for moderation`))
+                    .catch(console.error);
+            } else {
+                message.reply("Not a valid Text Channel: ignoring")
+            }
+        }
     }
 
-    isChannelRegistered = (a) => {
-        return false
+    unregisterChannel = async (message) => {
+        if (isAdmin(message.author, message.channel.guild)) {
+            const channel = message.mentions.channels.first();
+            const destroyed = await RegisteredChannel.destroy({ where: { channel_id: channel.id, guild_id: channel.guild.id } })
+            if (destroyed > 0) {
+                message.reply(`Unregistered ${channel} for moderation`)
+            } else {
+                message.reply(`${channel} not registered`)
+            }
+        }
+    }
+
+    isChannelRegistered = async (channel) => {
+        if (!channel || !channel.id || !channel.guild || !channel.guild.id) {
+            return false
+        }
+        const registeredChannel = await RegisteredChannel.findOne({ where: { channel_id: channel.id, guild_id: channel.guild.id } })
+        if (registeredChannel) {
+            return true
+        } else {
+            return false
+        }
     }
 
 }

@@ -14,34 +14,35 @@ client.once('ready', () => {
 });
 
 client.on("message", function (message) {
-    let moderate = eventManager.isChannelRegistered(message.channel.id)
-    // Ignore all messages from bots
-    if (message.author.bot) return;
-    // Ignore messages that don't begin with the prefix
-    if (!message.content.startsWith(config.PREFIX)) {
-        if (moderate) {
-            message.delete()
-        } else {
-            return
-        }
-    }
+    eventManager.isChannelRegistered(message.channel)
+        .then(moderate => {
+            // Ignore all messages from bots
+            if (message.author.bot) return Promise.resolve();
+            // Ignore messages that don't begin with the prefix
+            if (!message.content.startsWith(config.PREFIX)) {
+                if (moderate) {
+                    message.delete()
+                }
+                return Promise.resolve()
+            }
 
-    // Remove the prefix and get the first argument as the command
-    const commandBody = message.content.slice(config.PREFIX.length);
-    const args = commandBody.split(' ');
-    const command = args.shift().toLowerCase();
+            // Remove the prefix and get the first argument as the command
+            const commandBody = message.content.slice(config.PREFIX.length);
+            const args = commandBody.split(' ');
+            const command = args.shift().toLowerCase();
 
-    if (command === "list") {
-        eventManager.listEvents(message)
-    }
-
-    if (command === "register") {
-        eventManager.registerChannel(args)
-    }
-
-    if (command === "event") {
-        eventManager.newEvent(message, args)
-    }
+            if (command === "list") {
+                eventManager.listEvents(message)
+            } else if (command === "register") {
+                eventManager.registerChannel(message, args)
+            } else if (command === "unregister") {
+                eventManager.unregisterChannel(message, args)
+            } else if (command === "event") {
+                eventManager.newEvent(message, args)
+            }
+            if (moderate) message.delete()
+        })
+        .catch(console.error)
 });
 
 client.on("messageReactionAdd", async (messageReaction, user) => {
