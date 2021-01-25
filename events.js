@@ -293,6 +293,20 @@ class EventManager {
         }
     }
 
+    getLink = async (message, args) => {
+        const id = args.join().match("[0-9]+")
+        try {
+            const e = await Event.findByPk(parseInt(id))
+            if (e) {
+                message.reply(`${e.clean_text}: https://discordapp.com/channels/${e.guild_id}/${e.channel_id}/${e.message_id}`)
+            } else {
+                message.reply(`Couldn't find an event with id #${id}`)
+            }
+        } catch {
+            message.reply(`Couldn't find a valid id in ${args}`)
+        }
+    }
+
 }
 
 export { EventManager };

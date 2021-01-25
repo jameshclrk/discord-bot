@@ -39,6 +39,8 @@ client.on("message", function (message) {
                 eventManager.unregisterChannel(message, args)
             } else if (command === "event") {
                 eventManager.newEvent(message, args)
+            } else if (command === "show") {
+                eventManager.getLink(message, args)
             }
             if (moderate) message.delete()
         })
