@@ -48,7 +48,7 @@ const eventMessage = (event, attendees, unavail) => {
 }
 
 const listEventsMessage = (events) => {
-    let mEvents = events.map(e => ([e.clean_text, `#${e.id}`, eventDateShort(e)]))
+    let mEvents = events.map(e => ([e.clean_text.length === 0 ? "<no title>" : e.clean_text, `#${e.id}`, eventDateShort(e)]))
     let output;
 
     if (mEvents.length === 0) {
