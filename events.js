@@ -187,7 +187,12 @@ class EventManager {
         const { cleanText, text, date } = parsedEvent;
 
         const e = await Event.findByPk(parseInt(idMatch[1]))
+
         if (message.author.id === e.owner_id) {
+            if (message.channel.guild && message.channel.guild.id != e.guild_id) {
+                message.reply(EventErrors.PermissionDenied)
+                return
+            }
             // Update the DB
             e.text = text
             e.clean_text = cleanText
