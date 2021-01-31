@@ -34,6 +34,20 @@ class Event extends Sequelize.Model {
 
 class RegisteredChannel extends Sequelize.Model { }
 
+const EventErrors = {
+    "OK": 0,
+    "DateParse": "Couldn't parse the event date/time ¯\\_(ツ)_/¯",
+    "EventInPast": "Events should be in the future ¯\\_(ツ)_/¯",
+    "PermissionDenied": "You don't have permission to do that ¯\\_(ツ)_/¯",
+    "UnknownReaction": 4,
+    "UnknownEvent": 5,
+    "NotTextChannel": 6,
+}
+
+if (Object.freeze) {
+    Object.freeze(EventErrors)
+}
+
 class EventManager {
     constructor(client) {
         this.events = {};
