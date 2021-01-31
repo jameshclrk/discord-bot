@@ -40,7 +40,8 @@ const EventErrors = {
     "EventInPast": "Events should be in the future ¯\\_(ツ)_/¯",
     "PermissionDenied": "You don't have permission to do that ¯\\_(ツ)_/¯",
     "UnknownReaction": 4,
-    "UnknownEvent": 5,
+    "UnknownEvent": "Unknown event",
+    "EventParse": "Couldn't parse the event ID ¯\\_(ツ)_/¯",
     "NotTextChannel": 6,
 }
 
@@ -170,7 +171,7 @@ class EventManager {
     updateEvent = async (message) => {
         const idMatch = message.content.match("[#]?([0-9]+)")
         if (!idMatch) {
-            message.reply(EventErrors.UnknownEvent)
+            message.reply(EventErrors.EventParse)
             return
         }
         const updateRe = new RegExp(`${config.PREFIX}update|${idMatch[0]}`, "g")
