@@ -167,6 +167,72 @@ class EventManager {
             .catch(console.error);
     }
 
+    updateEvent = async (message) => {
+        const idMatch = message.content.match("[#]?([0-9]+)")
+        if (!idMatch) {
+            message.reply(EventErrors.UnknownEvent)
+            return
+        }
+        const updateRe = new RegExp(`${config.PREFIX}update|${idMatch[0]}`, "g")
+        const messageText = message.content.replace(updateRe, "")
+        const cleanMessage = message.cleanContent.replace(updateRe, "")
+        const parsedEvent = this.parseEventMessage(messageText, cleanMessage);
+
+        if (parsedEvent.error) {
+            message.reply(parsedEvent.error)
+            return
+        }
+
+        const { cleanText, text, date } = parsedEvent;
+
+        const e = await Event.findByPk(parseInt(idMatch[1]))
+        if (message.author.id === e.owner_id) {
+            // Update the DB
+            e.text = text
+            e.clean_text = cleanText
+            e.date = date
+            await e.save()
+
+            // Schedule the new event
+            const job = schedule.scheduleJob(e.date, () => { this.notify(e.message_id) })
+            e.job = job
+
+            // omg this is horrible
+            // Cancel the current event
+            let event = this.events[e.message_id]
+            if (event.job) {
+                event.job.cancel()
+            }
+            // Remove the old event
+            delete this.events[e.message_id]
+            // Take the new updated event and assign it
+            this.events[e.message_id] = e
+            // Rebuild the message and edit it
+            this.discordClient.channels.fetch(e.channel_id)
+                .then(channel => {
+                    channel.messages.fetch(e.message_id, true, true)
+                        .then(message => {
+                            return message.reactions.cache.get(config.YES_EMOJI).users.fetch()
+                                .then(attendees => {
+                                    return message.reactions.cache.get(config.NO_EMOJI).users.fetch()
+                                        .then(unavail_users => {
+                                            const attending = attendees.filter(user => !user.bot).array().join(", ")
+                                            const unavail = unavail_users.filter(user => !user.bot).array().join(", ");
+                                            return message.edit(eventMessage(e, attending, unavail));
+                                        })
+                                })
+                        })
+                        .catch(console.error);
+                })
+                .then( () => {
+                    message.reply(`Updated event #${idMatch[1]}: ${e.getUrl()}`)
+                })
+                .catch(console.error);
+        } else {
+            message.reply(EventErrors.PermissionDenied)
+        }
+    }
+
     // Remove an event from manager and database
     deleteEvent = async (userId, admin, messageId) => {
         // Delete only if requester is the owner of the event
