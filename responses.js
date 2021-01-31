@@ -51,6 +51,10 @@ const listEventsMessage = (events) => {
     let mEvents = events.map(e => ([e.clean_text, `#${e.id}`, eventDateShort(e)]))
     let output;
 
+    if (mEvents.length === 0) {
+        return "No events in this server"
+    }
+
     output = table(mEvents, {
         border: getBorderCharacters(`void`),
         columnDefault: {
