@@ -234,7 +234,7 @@ class EventManager {
                                     const attending = reactionLists[0].filter(user => !user.bot).array().join(", ")
                                     const unavail = reactionLists[1].filter(user => !user.bot).array().join(", ");
                                     const tentative = reactionLists[2].filter(user => !user.bot).array().join(", ");
-                                    return message.edit(eventMessage(e, attending, unavail));
+                                    return message.edit(eventMessage(e, attending, unavail, tentative));
                                 })
                         })
                 })
