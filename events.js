@@ -51,6 +51,7 @@ if (Object.freeze) {
 
 class EventManager {
     constructor(client) {
+        this.emojis = [config.YES_EMOJI, config.NO_EMOJI, config.TENTATIVE_EMOJI, config.EXIT_EMOJI]
         this.events = {};
         this.sequelize = new Sequelize('database', 'user', 'password', {
             host: 'localhost',
@@ -149,11 +150,9 @@ class EventManager {
         const { cleanText, text, date } = parsedEvent;
 
         // We "fake" an event object (it doesn't exist yet) with what's needed in the message...
-        message.reply(eventMessage({ clean_text: cleanText, date: date }, "", ""))
+        message.reply(eventMessage({ clean_text: cleanText, date: date }, "", "", ""))
             .then((newMessage) => {
-                newMessage.react(config.YES_EMOJI);
-                newMessage.react(config.NO_EMOJI);
-                newMessage.react(config.EXIT_EMOJI);
+                this.emojis.map(emoji => newMessage.react(emoji));
                 let guildId = "";
                 if (message.channel.guild) {
                     guildId = message.channel.guild.id
@@ -162,7 +161,7 @@ class EventManager {
                 this.storeEvent(newMessage.id, message.author.id, newMessage.channel.id, guildId, text, cleanText, date)
                     .then(e => {
                         this.addEvent(e)
-                        newMessage.edit(eventMessage(e, "", ""))
+                        newMessage.edit(eventMessage(e, "", "", ""))
                     })
             })
             .catch(console.error);
@@ -218,19 +217,21 @@ class EventManager {
                 .then(channel => {
                     channel.messages.fetch(e.message_id, true, true)
                         .then(message => {
-                            return message.reactions.cache.get(config.YES_EMOJI).users.fetch()
-                                .then(attendees => {
-                                    return message.reactions.cache.get(config.NO_EMOJI).users.fetch()
-                                        .then(unavail_users => {
-                                            const attending = attendees.filter(user => !user.bot).array().join(", ")
-                                            const unavail = unavail_users.filter(user => !user.bot).array().join(", ");
-                                            return message.edit(eventMessage(e, attending, unavail));
-                                        })
+                            const reactionPromises = [
+                                message.reactions.cache.get(config.YES_EMOJI).users.fetch(),
+                                message.reactions.cache.get(config.NO_EMOJI).users.fetch(),
+                                message.reactions.cache.get(config.TENTATIVE_EMOJI).users.fetch()
+                            ]
+                            return Promise.all(reactionPromises)
+                                .then(reactionLists => {
+                                    const attending = reactionLists[0].filter(user => !user.bot).array().join(", ")
+                                    const unavail = reactionLists[1].filter(user => !user.bot).array().join(", ");
+                                    const tentative = reactionLists[2].filter(user => !user.bot).array().join(", ");
+                                    return message.edit(eventMessage(e, attending, unavail));
                                 })
                         })
-                        .catch(console.error);
                 })
-                .then( () => {
+                .then(() => {
                     message.reply(`Updated event #${idMatch[1]}: ${e.getUrl()}`)
                 })
                 .catch(console.error);
@@ -268,15 +269,16 @@ class EventManager {
 
     // Handle event reactions
     handleReaction = (messageReaction, user, action) => {
+        const reaction = messageReaction._emoji.name
         // Either handle the YES or NO for attendence
-        if (messageReaction._emoji.name === config.YES_EMOJI || messageReaction._emoji.name === config.NO_EMOJI) {
+        if (reaction != config.EXIT_EMOJI && this.emojis.includes(reaction)) {
             console.log(`${user.username} updated their RSVP for event ${messageReaction.message.id}`)
             this.toggleAttendence(messageReaction, user, action)
                 .then(this.updateAttendees(messageReaction))
                 .catch(console.error);
 
             // OR handle the delete reaction
-        } else if ((action === "add") && (messageReaction._emoji.name === config.EXIT_EMOJI)) {
+        } else if ((action === "add") && (reaction === config.EXIT_EMOJI)) {
             const guild = messageReaction.message.guild;
             let admin = false;
             if (guild) {
@@ -296,32 +298,34 @@ class EventManager {
             return Promise.resolve()
         }
 
-        // Figure out the "opposite" emoji to remove
-        let toggleEmoji = ""
-        if (messageReaction._emoji.name === config.YES_EMOJI) {
-            toggleEmoji = config.NO_EMOJI
-        } else if (messageReaction._emoji.name === config.NO_EMOJI) {
-            toggleEmoji = config.YES_EMOJI
-        } else {
-            // wtf happened
-            return Promise.reject(`Tried to toggle attendence for ${user} with reaction ${messageReaction} ${action}`)
+        const reaction = messageReaction._emoji.name
+
+        // Don't do anything if the emoji isn't in our list
+        if (!this.emojis.includes(reaction)) {
+            return Promise.resolve()
         }
 
+        const removeReactions = this.emojis.filter(emoji => (emoji != reaction) && emoji != config.EXIT_EMOJI)
+            .map(emoji => messageReaction.message.reactions.resolve(emoji).users.remove(user))
+
         // As we are only worried about toggling a reaction when ADDING a reaction, we know we should REMOVE the opposite
-        return messageReaction.message.reactions.resolve(toggleEmoji).users.remove(user)
+        return Promise.all(removeReactions)
     }
 
     // Update the attendee list when a message has a new reaction
     updateAttendees = (messageReaction) => {
-        messageReaction.message.reactions.cache.get(config.YES_EMOJI).users.fetch()
-            .then(attendees => {
-                return messageReaction.message.reactions.cache.get(config.NO_EMOJI).users.fetch()
-                    .then(unavail_users => {
-                        const attending = attendees.filter(user => !user.bot).array().join(", ")
-                        const unavail = unavail_users.filter(user => !user.bot).array().join(", ");
-                        const e = this.events[messageReaction.message.id];
-                        return messageReaction.message.edit(eventMessage(e, attending, unavail));
-                    })
+        const reactionPromises = [
+            messageReaction.message.reactions.cache.get(config.YES_EMOJI).users.fetch(),
+            messageReaction.message.reactions.cache.get(config.NO_EMOJI).users.fetch(),
+            messageReaction.message.reactions.cache.get(config.TENTATIVE_EMOJI).users.fetch()
+        ]
+        Promise.all(reactionPromises)
+            .then(reactionLists => {
+                const attending = reactionLists[0].filter(user => !user.bot).array().join(", ")
+                const unavail = reactionLists[1].filter(user => !user.bot).array().join(", ");
+                const tentative = reactionLists[2].filter(user => !user.bot).array().join(", ");
+                const e = this.events[messageReaction.message.id];
+                return messageReaction.message.edit(eventMessage(e, attending, unavail, tentative));
             })
             .catch(console.error);
     }

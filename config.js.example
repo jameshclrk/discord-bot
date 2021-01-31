@@ -4,5 +4,6 @@ export default {
 	"PREFIX": "!",
 	"YES_EMOJI": "✅",
 	"NO_EMOJI": "❌",
+	"TENTATIVE_EMOJI": "❓",
 	"EXIT_EMOJI": "🚮"
 };

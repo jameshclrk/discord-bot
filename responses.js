@@ -10,38 +10,27 @@ const eventDateShort = (event) => {
     return `${dateFormat(event.date, "dd/mm/yyyy HH:MM Z")}`
 }
 
-const eventMessage = (event, attendees, unavail) => {
-    let attendee_list = attendees
-    let unavail_list = unavail
-    let id_text = ""
-    if (attendees === "") {
-        attendee_list = "none"
+const eventMessage = (event, attendees, unavail, tentative) => {
+    let fields = [{
+        name: "Time of Event",
+        value: eventDate(event),
+    },]
+    if (attendees != "") {
+        fields.push({ name: "Available", value: attendees })
     }
-    if (unavail === "") {
-        unavail_list = "none"
+    if (unavail != "") {
+        fields.push({ name: "Unavailable", value: unavail })
     }
-    if (event.id) {
-        id_text = `#${event.id} `
+    if (tentative != "") {
+        fields.push({ name: "Tentative", value: tentative })
     }
     return {
         embed: {
             color: 3447003,
-            title: `${id_text}${event.clean_text}`,
-            fields: [{
-                name: "Time of Event",
-                value: eventDate(event),
-            },
-            {
-                name: "Attendees",
-                value: attendee_list,
-            },
-            {
-                name: "Unavailable",
-                value: unavail_list,
-            }
-            ],
+            title: `${event.id ? `#${event.id} ` : ""}${event.clean_text}`,
+            fields: fields,
             footer: {
-                text: `${config.YES_EMOJI}: available ${config.NO_EMOJI}: unavailable ${config.EXIT_EMOJI}: delete`,
+                text: `${config.YES_EMOJI}: available ${config.NO_EMOJI}: unavailable ${config.TENTATIVE_EMOJI}: tentative ${config.EXIT_EMOJI}: delete`,
             },
         }
     }
