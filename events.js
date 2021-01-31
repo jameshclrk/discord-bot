@@ -26,7 +26,11 @@ const regChannelOptions = {
     guild_id: Sequelize.STRING,
 };
 
-class Event extends Sequelize.Model { }
+class Event extends Sequelize.Model {
+    getUrl = () => {
+        return `https://discordapp.com/channels/${this.guild_id}/${this.channel_id}/${this.message_id}`
+    }
+}
 
 class RegisteredChannel extends Sequelize.Model { }
 
@@ -304,7 +308,7 @@ class EventManager {
                 if (e.guild_id != message.channel.guild.id) {
                     message.reply(`Couldn't find an event with id #${id}`)
                 } else {
-                    message.reply(`${e.clean_text}: https://discordapp.com/channels/${e.guild_id}/${e.channel_id}/${e.message_id}`)
+                    message.reply(`${e.clean_text}: ${e.getUrl()}`)
                 }
             } else {
                 message.reply(`Couldn't find an event with id #${id}`)
