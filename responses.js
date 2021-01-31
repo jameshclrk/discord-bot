@@ -75,7 +75,11 @@ const listEventsMessage = (events) => {
 }
 
 const notificationMessage = (title, date, attendees) => {
-    return `${attendees}: ${title}`
+    let attendee_text = ""
+    if (attendees != "") {
+        attendee_text = `${attendees}: `
+    }
+    return `${attendees_text}${title.length === 0 ? "<no title>" : title}`
 }
 
 export { eventMessage, listEventsMessage, notificationMessage };
