@@ -79,7 +79,7 @@ const notificationMessage = (title, date, attendees) => {
     if (attendees != "") {
         attendee_text = `${attendees}: `
     }
-    return `${attendees_text}${title.length === 0 ? "<no title>" : title}`
+    return `${attendee_text}${title.length === 0 ? "<no title>" : title}`
 }
 
 export { eventMessage, listEventsMessage, notificationMessage };
