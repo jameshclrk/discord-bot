@@ -117,28 +117,35 @@ class EventManager {
         });
     }
 
-    // Create a new event based on a message with args
-    newEvent = (message, args) => {
-        // For an event, we want to take the other arguments as a sentence
-        const arg = args.join(" ")
-        const cleanMessage = message.cleanContent.replace(`${config.PREFIX}event `, "")
-        const currentTime = Date.now()
-        const results = chrono.parse(arg, currentTime, { forwardDate: true });
-
-        // Check if the parsing was successful
+    parseEventMessage = (message, cleanMessage) => {
+        const currentTime = Date.now();
+        const results = chrono.parse(cleanMessage, currentTime, { forwardDate: true });
         if (results.length === 0) {
-            message.reply("Couldn't parse the event date/time ¯\\_(ツ)_/¯")
-            return
+            return { error: EventErrors.DateParse };
         }
 
-        const text = arg.replace(results[0].text, "");
-        const cleanText = cleanMessage.replace(results[0].text, "")
+        const text = message.replace(results[0].text, "").trim();
+        const cleanText = cleanMessage.replace(results[0].text, "").trim();
         const date = results[0].date()
 
         if (date <= currentTime) {
-            message.reply("Events should be in the future ¯\\_(ツ)_/¯")
+            return { error: EventErrors.EventInPast };
+        }
+
+        return { cleanText: cleanText, text: text, date: date };
+    }
+
+    // Create a new event based on a message with args
+    newEvent = (message) => {
+        const messageText = message.content.replace(`${config.PREFIX}event `, "")
+        const cleanMessage = message.cleanContent.replace(`${config.PREFIX}event `, "")
+        const parsedEvent = this.parseEventMessage(messageText, cleanMessage);
+
+        if (parsedEvent.error) {
+            message.reply(parsedEvent.error)
             return
         }
+        const { cleanText, text, date } = parsedEvent;
 
         // We "fake" an event object (it doesn't exist yet) with what's needed in the message...
         message.reply(eventMessage({ clean_text: cleanText, date: date }, "", ""))
