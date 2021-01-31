@@ -85,10 +85,17 @@ class EventManager {
         this.discordClient.channels.fetch(event.channel_id)
             .then(channel => {
                 channel.messages.fetch(messageId, true, true)
-                    .then(message => message.reactions.cache.get(config.YES_EMOJI).users.fetch())
-                    .then(users => {
-                        const attending = users.filter(user => !user.bot).array().join(", ");
-                        return channel.send(notificationMessage(event.text, null, attending))
+                    .then(message => {
+                        const reactionPromises = [
+                            message.reactions.cache.get(config.YES_EMOJI).users.fetch(),
+                            message.reactions.cache.get(config.TENTATIVE_EMOJI).users.fetch(),
+                        ]
+                        return Promise.all(reactionPromises)
+                    })
+                    .then(reactionLists => {
+                        const users = reactionLists[0].concat(reactionLists[1])
+                        const notify = users.filter(user => !user.bot).array().join(", ");
+                        return channel.send(notificationMessage(event.text, null, notify))
                     })
                     .then(() => {
                         console.log(`event ${messageId} happened! deleting`)
