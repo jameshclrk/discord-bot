@@ -133,9 +133,10 @@ class EventManager {
             return { error: EventErrors.DateParse };
         }
 
-        const text = message.replace(results[0].text, "").trim();
-        const cleanText = cleanMessage.replace(results[0].text, "").trim();
-        const date = results[0].date()
+        const chronoResult = results[results.length - 1]
+        const text = message.replace(chronoResult.text, "").trim();
+        const cleanText = cleanMessage.replace(chronoResult.text, "").trim();
+        const date = chronoResult.date()
 
         if (date <= currentTime) {
             return { error: EventErrors.EventInPast };
