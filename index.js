@@ -6,7 +6,6 @@ import { EventManager } from "./events.js";
 const client = new Discord.Client({ partials: ['MESSAGE', 'CHANNEL', 'REACTION'] });
 const eventManager = new EventManager(client);
 
-client.login(config.BOT_TOKEN);
 
 client.once('ready', () => {
     // Once we're connected to discord, load the saved events and schedule them
@@ -66,3 +65,12 @@ client.on("messageReactionRemove", async (messageReaction, user) => {
         eventManager.handleReaction(messageReaction, user, "remove")
     }
 });
+
+client.login(config.BOT_TOKEN);
+
+process.on('SIGTERM', () => {
+    console.info('SIGTERM signal received.');
+    client.destroy()
+    process.exit(0)
+});
+
