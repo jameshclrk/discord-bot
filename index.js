@@ -12,6 +12,23 @@ client.once('ready', () => {
     eventManager.init()
 });
 
+client.on("guildCreate", function(guild) {
+    const required_permissions = [
+        "MANAGE_MESSAGES",       // Remove reactions (always), Remove messages (when moderating)
+        "ADD_REACTIONS",         // Add voting options as reactions
+        "VIEW_CHANNEL",          // View messages to create events
+        "SEND_MESSAGES",         // Send event details/reminders
+        "READ_MESSAGE_HISTORY",  // For handling events after the bot has restarted
+        "MENTION_EVERYONE",      // In case someone wants to mention everyone
+    ]
+    console.log(`Bot joined ${guild.id}`)
+    required_permissions.map((permission) => {
+        if (!guild.me.hasPermission(permission)) {
+            console.log(`MISSING PERMISSION IN ${guild.name}: ${permission}`)
+        }
+    })
+})
+
 client.on("message", function (message) {
     eventManager.isChannelRegistered(message.channel)
         .then(moderate => {
