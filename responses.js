@@ -15,14 +15,14 @@ const eventMessage = (event, attendees, unavail, tentative) => {
         name: "Time of Event",
         value: eventDate(event),
     },]
-    if (attendees != "") {
-        fields.push({ name: "Available", value: attendees })
+    if (attendees.length > 0) {
+        fields.push({ name: `Available (${attendees.length})`, value: attendees.join(", ") })
     }
-    if (unavail != "") {
-        fields.push({ name: "Unavailable", value: unavail })
+    if (tentative.length > 0) {
+        fields.push({ name: `Tentative (${tentative.length})`, value: tentative.join(", ") })
     }
-    if (tentative != "") {
-        fields.push({ name: "Tentative", value: tentative })
+    if (unavail.length > 0) {
+        fields.push({ name: `Unavailable (${unavail.length})`, value: unavail.join(", ") })
     }
     return {
         embed: {

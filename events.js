@@ -158,7 +158,7 @@ class EventManager {
         const { cleanText, text, date } = parsedEvent;
 
         // We "fake" an event object (it doesn't exist yet) with what's needed in the message...
-        message.reply(eventMessage({ clean_text: cleanText, date: date }, "", "", ""))
+        message.reply(eventMessage({ clean_text: cleanText, date: date }, [], [], []))
             .then((newMessage) => {
                 this.emojis.map(emoji => newMessage.react(emoji));
                 let guildId = "";
@@ -169,7 +169,7 @@ class EventManager {
                 this.storeEvent(newMessage.id, message.author.id, newMessage.channel.id, guildId, text, cleanText, date)
                     .then(e => {
                         this.addEvent(e)
-                        newMessage.edit(eventMessage(e, "", "", ""))
+                        newMessage.edit(eventMessage(e, [], [], []))
                     })
             })
             .catch(console.error);
@@ -232,9 +232,9 @@ class EventManager {
                             ]
                             return Promise.all(reactionPromises)
                                 .then(reactionLists => {
-                                    const attending = reactionLists[0].filter(user => !user.bot).array().join(", ")
-                                    const unavail = reactionLists[1].filter(user => !user.bot).array().join(", ");
-                                    const tentative = reactionLists[2].filter(user => !user.bot).array().join(", ");
+                                    const attending = reactionLists[0].filter(user => !user.bot).array();
+                                    const unavail = reactionLists[1].filter(user => !user.bot).array();
+                                    const tentative = reactionLists[2].filter(user => !user.bot).array();
                                     return message.edit(eventMessage(e, attending, unavail, tentative));
                                 })
                         })
@@ -329,9 +329,9 @@ class EventManager {
         ]
         Promise.all(reactionPromises)
             .then(reactionLists => {
-                const attending = reactionLists[0].filter(user => !user.bot).array().join(", ")
-                const unavail = reactionLists[1].filter(user => !user.bot).array().join(", ");
-                const tentative = reactionLists[2].filter(user => !user.bot).array().join(", ");
+                const attending = reactionLists[0].filter(user => !user.bot).array();
+                const unavail = reactionLists[1].filter(user => !user.bot).array();
+                const tentative = reactionLists[2].filter(user => !user.bot).array();
                 const e = this.events[messageReaction.message.id];
                 return messageReaction.message.edit(eventMessage(e, attending, unavail, tentative));
             })
