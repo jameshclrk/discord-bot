@@ -3,7 +3,7 @@ import { table, getBorderCharacters } from "table";
 import config from "./config.js";
 
 const eventDate = (event) => {
-    return `${dateFormat(event.date, "ddd mmm dd yyyy HH:MM:ss Z")} ([Convert](https://timee.io/${dateFormat(event.date, "yyyymmdd'T'HHMM")}?tl=${encodeURIComponent(event.clean_text)}))`
+    return `${dateFormat(event.date, "ddd mmm dd yyyy HH:MM:ss Z")} ([Convert](https://timee.io/${dateFormat(event.date, "UTC:yyyymmdd'T'HHMM")}?tl=${encodeURIComponent(event.clean_text)}))`
 }
 
 const eventDateShort = (event) => {
