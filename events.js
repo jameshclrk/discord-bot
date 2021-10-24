@@ -67,13 +67,15 @@ class EventManager {
 
     // Initialise the database model and add add existing events to runtime
     init = () => {
-        this.sequelize.sync();
-        Event.findAll()
-            .then(allEvents => {
-                allEvents.forEach(e => {
-                    this.addEvent(e)
-                    console.log(`loaded event ${e.id}/${e.message_id}/${e.guild_id} from database`)
-                })
+        this.sequelize.sync()
+            .then(() => {
+                Event.findAll()
+                    .then(allEvents => {
+                        allEvents.forEach(e => {
+                        this.addEvent(e)
+                        console.log(`loaded event ${e.id}/${e.message_id}/${e.guild_id} from database`)
+                    })
+                });
             });
     }
 
